@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Client-Side Search</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="wrap">
+    <input id="search" type="text" placeholder="Search countries…" autocomplete="off" />
+    <ul id="results"></ul>
+  </div>
+
+  <script type="module">
+    import { autocomplete } from './js/search.js';
+
+    const input = document.getElementById("search");
+    const listEl = document.getElementById("results");
+    let activeIdx = -1;
+
+    function render(query) {
+      const items = autocomplete(query, 10);
+      activeIdx = -1;
+
+      if (!items.length) {
+        listEl.innerHTML = "";
+        listEl.classList.remove("open");
+        return;
+      }
+
+      listEl.innerHTML = items.map(it => `<li>${it}</li>`).join("");
+      listEl.classList.add("open");
+    }
+
+    input.addEventListener("input", () => render(input.value));
+
+    input.addEventListener("keydown", e => {
+      const lis = listEl.querySelectorAll("li");
+      if (!lis.length) return;
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        activeIdx = (activeIdx + 1) % lis.length;
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        activeIdx = (activeIdx - 1 + lis.length) % lis.length;
+      } else if (e.key === "Enter" && activeIdx >= 0) {
+        e.preventDefault();
+        input.value = lis[activeIdx].textContent;
+        listEl.classList.remove("open");
+        return;
+      } else if (e.key === "Escape") {
+        listEl.classList.remove("open");
+        return;
+      } else {
+        return;
+      }
+      lis.forEach((li, i) => li.classList.toggle("active", i === activeIdx));
+      lis[activeIdx].scrollIntoView({ block: "nearest" });
+    });
+
+    // Click to select
+    listEl.addEventListener("click", e => {
+      const li = e.target.closest("li");
+      if (li) {
+        input.value = li.textContent;
+        listEl.classList.remove("open");
+      }
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener("click", e => {
+      if (!e.target.closest(".wrap")) listEl.classList.remove("open");
+    });
+  </script>
+</body>
+</html>
